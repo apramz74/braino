@@ -11,6 +11,8 @@ if (!supabaseUrl || !supabaseAnonKey) {
   throw new Error("Supabase configuration is missing");
 }
 
+console.log("Initializing Supabase client with URL:", supabaseUrl);
+
 // Create client with proper options
 const supabase = createClient(supabaseUrl, supabaseAnonKey, {
   auth: {
@@ -26,116 +28,178 @@ const supabase = createClient(supabaseUrl, supabaseAnonKey, {
 
 // Templates API
 export const fetchTemplates = async (): Promise<Template[]> => {
-  const { data, error } = await supabase
-    .from("templates")
-    .select("*")
-    .order("created_at", { ascending: false });
+  try {
+    const { data, error } = await supabase
+      .from("templates")
+      .select("*")
+      .order("created_at", { ascending: false });
 
-  if (error) {
-    console.error("Error fetching templates:", error);
-    throw error;
+    if (error) {
+      console.error("Error fetching templates:", error);
+      throw error;
+    }
+
+    return data || [];
+  } catch (err: any) {
+    // More detailed error logging
+    console.error("Exception in fetchTemplates:", err);
+    if (err.response) {
+      console.error("Response status:", err.response.status);
+      console.error("Response headers:", err.response.headers);
+    }
+    throw err;
   }
-
-  return data || [];
 };
 
 export const createTemplate = async (
   template: Omit<Template, "id">
 ): Promise<Template> => {
-  const { data, error } = await supabase
-    .from("templates")
-    .insert({
-      name: template.name,
-      description: template.description,
-      content: template.content,
-      created_at: new Date().toISOString(),
-    })
-    .select()
-    .single();
+  try {
+    const { data, error } = await supabase
+      .from("templates")
+      .insert({
+        name: template.name,
+        description: template.description,
+        content: template.content,
+        created_at: new Date().toISOString(),
+      })
+      .select()
+      .single();
 
-  if (error) {
-    console.error("Error creating template:", error);
-    throw error;
+    if (error) {
+      console.error("Error creating template:", error);
+      throw error;
+    }
+
+    return data;
+  } catch (err: any) {
+    console.error("Exception in createTemplate:", err);
+    throw err;
   }
-
-  return data;
 };
 
 export const updateTemplate = async (template: Template): Promise<Template> => {
-  const { data, error } = await supabase
-    .from("templates")
-    .update({
-      name: template.name,
-      description: template.description,
-      content: template.content,
-      updated_at: new Date().toISOString(),
-    })
-    .eq("id", template.id)
-    .select()
-    .single();
+  try {
+    const { data, error } = await supabase
+      .from("templates")
+      .update({
+        name: template.name,
+        description: template.description,
+        content: template.content,
+        updated_at: new Date().toISOString(),
+      })
+      .eq("id", template.id)
+      .select()
+      .single();
 
-  if (error) {
-    console.error("Error updating template:", error);
-    throw error;
+    if (error) {
+      console.error("Error updating template:", error);
+      throw error;
+    }
+
+    return data;
+  } catch (err: any) {
+    console.error("Exception in updateTemplate:", err);
+    throw err;
   }
-
-  return data;
 };
 
 export const deleteTemplate = async (id: string): Promise<void> => {
-  const { error } = await supabase.from("templates").delete().eq("id", id);
+  try {
+    const { error } = await supabase.from("templates").delete().eq("id", id);
 
-  if (error) {
-    console.error("Error deleting template:", error);
-    throw error;
+    if (error) {
+      console.error("Error deleting template:", error);
+      throw error;
+    }
+  } catch (err: any) {
+    console.error("Exception in deleteTemplate:", err);
+    throw err;
   }
 };
 
 // Document History API
 export const fetchDocumentHistory = async (): Promise<DocumentHistory[]> => {
-  const { data, error } = await supabase
-    .from("document_history")
-    .select("*")
-    .order("created_at", { ascending: false });
+  try {
+    const { data, error } = await supabase
+      .from("document_history")
+      .select("*")
+      .order("created_at", { ascending: false });
 
-  if (error) {
-    console.error("Error fetching document history:", error);
-    throw error;
+    if (error) {
+      console.error("Error fetching document history:", error);
+      throw error;
+    }
+
+    return data || [];
+  } catch (err: any) {
+    console.error("Exception in fetchDocumentHistory:", err);
+    throw err;
   }
-
-  return data || [];
 };
 
 export const saveDocumentToHistory = async (
   document: Omit<Omit<DocumentHistory, "id">, "created_at">
 ): Promise<DocumentHistory> => {
-  const { data, error } = await supabase
-    .from("document_history")
-    .insert({
-      title: document.title,
-      content: document.content,
-      template_id: document.templateId,
-      created_at: new Date().toISOString(),
-    })
-    .select()
-    .single();
+  try {
+    const { data, error } = await supabase
+      .from("document_history")
+      .insert({
+        title: document.title,
+        content: document.content,
+        template_id: document.templateId,
+        created_at: new Date().toISOString(),
+      })
+      .select()
+      .single();
 
-  if (error) {
-    console.error("Error saving document to history:", error);
-    throw error;
+    if (error) {
+      console.error("Error saving document to history:", error);
+      throw error;
+    }
+
+    return data;
+  } catch (err: any) {
+    console.error("Exception in saveDocumentToHistory:", err);
+    throw err;
   }
-
-  return data;
 };
 
 export const deleteDocumentFromHistory = async (id: string): Promise<void> => {
-  const { error } = await supabase
-    .from("document_history")
-    .delete()
-    .eq("id", id);
+  try {
+    const { error } = await supabase
+      .from("document_history")
+      .delete()
+      .eq("id", id);
 
-  if (error) {
-    console.error("Error deleting document from history:", error);
-    throw error;
+    if (error) {
+      console.error("Error deleting document from history:", error);
+      throw error;
+    }
+  } catch (err: any) {
+    console.error("Exception in deleteDocumentFromHistory:", err);
+    throw err;
+  }
+};
+
+// Helper function to check Supabase connection
+export const checkSupabaseConnection = async (): Promise<boolean> => {
+  try {
+    // Simple query to check if connection is working
+    const { data, error } = await supabase
+      .from("templates")
+      .select("id")
+      .limit(1);
+
+    if (error) {
+      console.error("Supabase connection check failed:", error);
+      return false;
+    }
+
+    console.log("Supabase connection successful");
+    return true;
+  } catch (err: any) {
+    console.error("Exception in checkSupabaseConnection:", err);
+    return false;
   }
 };
