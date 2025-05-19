@@ -1,33 +1,28 @@
 import { createClient } from "@supabase/supabase-js";
 import { Template, DocumentHistory } from "../types";
 
-// Initialize the Supabase client using environment variables
-// But fallback to hardcoded values if environment variables are not available
-// This is a temporary solution for development - remove hardcoded values for production
-const supabaseUrl =
-  process.env.REACT_APP_SUPABASE_URL ||
-  "https://abmhwjlzmlbrlyityeud.supabase.co";
-const supabaseAnonKey =
-  process.env.REACT_APP_SUPABASE_ANON_KEY ||
-  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFibWh3amx6bWxicmx5aXR5ZXVkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDc2MTk4NTAsImV4cCI6MjA2MzE5NTg1MH0.TAR9SxO9SDkbnhAffgIpVnTssQ5DMw4-P40AJZmlCGE";
-
-// Debug logging to help troubleshoot
-console.log(
-  "Supabase URL from env:",
-  process.env.REACT_APP_SUPABASE_URL ? "Found" : "Not found"
-);
-console.log(
-  "Actually using URL:",
-  supabaseUrl ? supabaseUrl.substring(0, 15) + "..." : "None"
-);
+// Get environment variables
+const supabaseUrl = process.env.REACT_APP_SUPABASE_URL;
+const supabaseAnonKey = process.env.REACT_APP_SUPABASE_ANON_KEY;
 
 // Check if we have what we need
 if (!supabaseUrl || !supabaseAnonKey) {
-  console.error("Missing Supabase configuration even after fallback");
-  throw new Error("Supabase configuration is missing completely");
+  console.error("Missing Supabase configuration");
+  throw new Error("Supabase configuration is missing");
 }
 
-const supabase = createClient(supabaseUrl, supabaseAnonKey);
+// Create client with proper options
+const supabase = createClient(supabaseUrl, supabaseAnonKey, {
+  auth: {
+    autoRefreshToken: true,
+    persistSession: true,
+  },
+  global: {
+    headers: {
+      "X-Client-Info": "brainstormer-app/1.0.0",
+    },
+  },
+});
 
 // Templates API
 export const fetchTemplates = async (): Promise<Template[]> => {
