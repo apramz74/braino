@@ -12,126 +12,41 @@ import {
 import { Template, DocumentHistory } from "../types";
 import { FileText, BookTemplate } from "lucide-react";
 
-// Simplified Markdown to HTML converter with special handling for display
-const markdownToHtml = (markdown: string): string => {
-  // First, clean up the markdown by removing empty lines before headings
-  // and ensuring only one empty line between sections
-  const cleanedMarkdown = markdown
-    .replace(/\r\n/g, "\n") // Normalize line endings
-    .replace(/\n+#/g, "\n#") // Remove empty lines before headings
-    .replace(/\n{3,}/g, "\n\n"); // Limit consecutive empty lines
+// Restore the function to process inline markdown formatting
+const processInlineFormatting = (text: string): string => {
+  // First handle colon patterns after bold text to prevent unwanted line breaks
+  let processedText = text.replace(
+    /\*\*(.*?):\*\*/g,
+    "<strong>$1:&nbsp;</strong>" // Added non-breaking space after colon
+  );
+  processedText = processedText.replace(
+    /__(.*?):__/g,
+    "<strong>$1:&nbsp;</strong>" // Added non-breaking space after colon
+  );
 
-  // Track if we're inside a section and the previous line was a heading
-  let inSection = false;
-  let afterHeading = false;
-  let result = "";
+  // Handle bold text with colon immediately followed by content
+  processedText = processedText.replace(
+    /\*\*(.*?):\*\*\s*(.*)/g,
+    "<strong>$1:</strong>&nbsp;$2" // Added non-breaking space after colon
+  );
+  processedText = processedText.replace(
+    /__(.*?):__\s*(.*)/g,
+    "<strong>$1:</strong>&nbsp;$2" // Added non-breaking space after colon
+  );
 
-  // Process line by line
-  const lines = cleanedMarkdown.split("\n");
-  for (let i = 0; i < lines.length; i++) {
-    const line = lines[i];
-    const trimmedLine = line.trim();
+  // Then handle regular bold patterns that don't end with colons
+  processedText = processedText.replace(
+    /\*\*(.*?)\*\*/g,
+    "<strong>$1</strong>"
+  );
+  processedText = processedText.replace(/__(.*?)__/g, "<strong>$1</strong>");
 
-    // Skip empty lines if they're between sections or after a heading
-    if (trimmedLine === "") {
-      if (afterHeading) {
-        // Skip empty line after heading
-        continue;
-      }
+  // Italic: Convert *text* or _text_ to <em>text</em>
+  processedText = processedText
+    .replace(/\*(.*?)\*/g, "<em>$1</em>")
+    .replace(/_(.*?)_/g, "<em>$1</em>");
 
-      // Check if next non-empty line is a heading
-      let isBeforeHeading = false;
-      for (let j = i + 1; j < lines.length; j++) {
-        const nextLine = lines[j].trim();
-        if (nextLine === "") continue;
-        if (nextLine.startsWith("#")) {
-          isBeforeHeading = true;
-        }
-        break;
-      }
-
-      if (isBeforeHeading) {
-        // Skip empty line before heading
-        continue;
-      }
-
-      // Otherwise, render a small spacer
-      result += "<div class='editor-line editor-spacer'></div>";
-      continue;
-    }
-
-    // Process headings and reset section tracking
-    if (trimmedLine.startsWith("# ")) {
-      result += `<div class='editor-line editor-h1'>${trimmedLine.substring(
-        2
-      )}</div>`;
-      inSection = true;
-      afterHeading = true;
-    } else if (trimmedLine.startsWith("## ")) {
-      result += `<div class='editor-line editor-h2'>${trimmedLine.substring(
-        3
-      )}</div>`;
-      inSection = true;
-      afterHeading = true;
-    } else if (trimmedLine.startsWith("### ")) {
-      result += `<div class='editor-line editor-h3'>${trimmedLine.substring(
-        4
-      )}</div>`;
-      inSection = true;
-      afterHeading = true;
-    } else if (trimmedLine.startsWith("- ")) {
-      // Fix bullet point rendering
-      result += `<div class='editor-line editor-bullet'><span class="bullet-marker">•</span> ${trimmedLine.substring(
-        2
-      )}</div>`;
-      afterHeading = false;
-    } else if (line.match(/^\d+\.\s/)) {
-      // Fix numbered list rendering
-      const num = trimmedLine.match(/^\d+/)?.[0] || "1";
-      result += `<div class='editor-line editor-numbered'><span class="number-marker">${num}.</span> ${trimmedLine.substring(
-        trimmedLine.indexOf(" ") + 1
-      )}</div>`;
-      afterHeading = false;
-    } else {
-      result += `<div class='editor-line'>${trimmedLine}</div>`;
-      afterHeading = false;
-    }
-  }
-
-  return result;
-};
-
-// HTML to Markdown converter
-const htmlToMarkdown = (html: string): string => {
-  // Parse the HTML content
-  const div = document.createElement("div");
-  div.innerHTML = html;
-
-  // Process each line
-  const lines = div.querySelectorAll(".editor-line");
-  let markdown = "";
-
-  lines.forEach((line) => {
-    const text = line.textContent || "";
-
-    if (line.classList.contains("editor-h1")) {
-      markdown += `# ${text}\n\n`;
-    } else if (line.classList.contains("editor-h2")) {
-      markdown += `## ${text}\n\n`;
-    } else if (line.classList.contains("editor-h3")) {
-      markdown += `### ${text}\n\n`;
-    } else if (line.classList.contains("editor-bullet")) {
-      markdown += `- ${text}\n`;
-    } else if (line.classList.contains("editor-numbered")) {
-      markdown += `1. ${text}\n`;
-    } else if (text.trim() === "") {
-      markdown += "\n";
-    } else {
-      markdown += `${text}\n\n`;
-    }
-  });
-
-  return markdown.trim();
+  return processedText;
 };
 
 // Custom editor styles
@@ -181,18 +96,21 @@ const editorStyles = `
   .generated-document .editor-h1 {
     margin-top: 1.4em;
     margin-bottom: 0.6em;
-    padding-bottom: 0.2em;
-    border-bottom: 1px solid rgba(0,0,0,0.1);
+    /* Removing this line that was causing horizontal lines */
+    /* padding-bottom: 0.2em; */
+    border-bottom: none;
   }
   
   .generated-document .editor-h2 {
     margin-top: 1.2em;
     margin-bottom: 0.5em;
+    border-bottom: none;
   }
   
   .generated-document .editor-h3 {
     margin-top: 1em;
     margin-bottom: 0.4em;
+    border-bottom: none;
   }
   
   /* Add space after the first heading (document title) */
@@ -326,6 +244,126 @@ const editorStyles = `
   }
 `;
 
+// Simplified Markdown to HTML converter with special handling for display
+const markdownToHtml = (markdown: string): string => {
+  // First, clean up the markdown by removing empty lines before headings
+  // and ensuring only one empty line between sections
+  const cleanedMarkdown = markdown
+    .replace(/\r\n/g, "\n") // Normalize line endings
+    .replace(/\n+#/g, "\n#") // Remove empty lines before headings
+    .replace(/\n{3,}/g, "\n\n"); // Limit consecutive empty lines
+
+  // Track if the previous line was a heading
+  let afterHeading = false;
+  let result = "";
+
+  // Process line by line
+  const lines = cleanedMarkdown.split("\n");
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i];
+    const trimmedLine = line.trim();
+
+    // Skip empty lines if they're between sections or after a heading
+    if (trimmedLine === "") {
+      if (afterHeading) {
+        // Skip empty line after heading
+        continue;
+      }
+
+      // Check if next non-empty line is a heading
+      let isBeforeHeading = false;
+      for (let j = i + 1; j < lines.length; j++) {
+        const nextLine = lines[j].trim();
+        if (nextLine === "") continue;
+        if (nextLine.startsWith("#")) {
+          isBeforeHeading = true;
+        }
+        break;
+      }
+
+      if (isBeforeHeading) {
+        // Skip empty line before heading
+        continue;
+      }
+
+      // Otherwise, render a small spacer
+      result += "<div class='editor-line editor-spacer'></div>";
+      continue;
+    }
+
+    // Process headings and reset section tracking
+    if (trimmedLine.startsWith("# ")) {
+      result += `<div class='editor-line editor-h1'>${processInlineFormatting(
+        trimmedLine.substring(2)
+      )}</div>`;
+      afterHeading = true;
+    } else if (trimmedLine.startsWith("## ")) {
+      result += `<div class='editor-line editor-h2'>${processInlineFormatting(
+        trimmedLine.substring(3)
+      )}</div>`;
+      afterHeading = true;
+    } else if (trimmedLine.startsWith("### ")) {
+      result += `<div class='editor-line editor-h3'>${processInlineFormatting(
+        trimmedLine.substring(4)
+      )}</div>`;
+      afterHeading = true;
+    } else if (trimmedLine.startsWith("- ")) {
+      // Fix bullet point rendering
+      result += `<div class='editor-line editor-bullet'><span class="bullet-marker">•</span> ${processInlineFormatting(
+        trimmedLine.substring(2)
+      )}</div>`;
+      afterHeading = false;
+    } else if (line.match(/^\d+\.\s/)) {
+      // Fix numbered list rendering
+      const num = trimmedLine.match(/^\d+/)?.[0] || "1";
+      result += `<div class='editor-line editor-numbered'><span class="number-marker">${num}.</span> ${processInlineFormatting(
+        trimmedLine.substring(trimmedLine.indexOf(" ") + 1)
+      )}</div>`;
+      afterHeading = false;
+    } else {
+      result += `<div class='editor-line'>${processInlineFormatting(
+        trimmedLine
+      )}</div>`;
+      afterHeading = false;
+    }
+  }
+
+  return result;
+};
+
+// HTML to Markdown converter
+const htmlToMarkdown = (html: string): string => {
+  // Parse the HTML content
+  const div = document.createElement("div");
+  div.innerHTML = html;
+
+  // Process each line
+  const lines = div.querySelectorAll(".editor-line");
+  let markdown = "";
+
+  lines.forEach((line) => {
+    const text = line.textContent || "";
+
+    if (line.classList.contains("editor-h1")) {
+      markdown += `# ${text}\n\n`;
+    } else if (line.classList.contains("editor-h2")) {
+      markdown += `## ${text}\n\n`;
+    } else if (line.classList.contains("editor-h3")) {
+      markdown += `### ${text}\n\n`;
+    } else if (line.classList.contains("editor-bullet")) {
+      markdown += `- ${text}\n`;
+    } else if (line.classList.contains("editor-numbered")) {
+      markdown += `1. ${text}\n`;
+    } else if (text.trim() === "") {
+      markdown += "\n";
+    } else {
+      markdown += `${text}\n\n`;
+    }
+  });
+
+  return markdown.trim();
+};
+
 // Function to sanitize markdown content by removing unnecessary empty lines
 const sanitizeMarkdown = (markdown: string): string => {
   // First, normalize line endings and ensure consistent formatting
@@ -366,6 +404,185 @@ const sanitizeMarkdown = (markdown: string): string => {
   return result;
 };
 
+// Function to strip markdown formatting for previews
+const stripMarkdownForPreview = (markdown: string): string => {
+  // Remove heading markers (# Heading)
+  let result = markdown.replace(/^#+\s+(.+)$/gm, "$1");
+
+  // Remove bullet points/list markers
+  result = result.replace(/^[-*]\s+(.+)$/gm, "$1");
+
+  // Remove numbered list markers
+  result = result.replace(/^\d+\.\s+(.+)$/gm, "$1");
+
+  // Remove emphasis/bold markers
+  result = result.replace(/\*\*(.*?)\*\*/g, "$1");
+  result = result.replace(/__(.*?)__/g, "$1");
+  result = result.replace(/\*(.*?)\*/g, "$1");
+  result = result.replace(/_(.*?)_/g, "$1");
+
+  return result;
+};
+
+// Helper function to generate clean HTML body content from markdown
+const bodyContentFromMarkdown = (markdown: string): string => {
+  // First, clean up the markdown by removing empty lines before headings
+  // and ensuring only one empty line between sections
+  const cleanedMarkdown = markdown
+    .replace(/\r\n/g, "\n") // Normalize line endings
+    .replace(/\n+#/g, "\n#") // Remove empty lines before headings
+    .replace(/\n{3,}/g, "\n\n"); // Limit consecutive empty lines
+
+  // Process line by line
+  const lines = cleanedMarkdown.split("\n");
+  let bodyContent = "";
+
+  // Track if we're in a list to properly open/close list tags
+  let inUnorderedList = false;
+  let inOrderedList = false;
+
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i];
+    const trimmedLine = line.trim();
+
+    // Skip empty lines
+    if (trimmedLine === "") {
+      // Close any open lists when we encounter empty line
+      if (inUnorderedList) {
+        bodyContent += "</ul>\n";
+        inUnorderedList = false;
+      }
+      if (inOrderedList) {
+        bodyContent += "</ol>\n";
+        inOrderedList = false;
+      }
+
+      bodyContent += "<p>&nbsp;</p>\n";
+      continue;
+    }
+
+    // Process headings with semantic tags
+    if (trimmedLine.startsWith("# ")) {
+      // Close any open lists
+      if (inUnorderedList) {
+        bodyContent += "</ul>\n";
+        inUnorderedList = false;
+      }
+      if (inOrderedList) {
+        bodyContent += "</ol>\n";
+        inOrderedList = false;
+      }
+
+      bodyContent += `<h1>${processInlineFormatting(
+        trimmedLine.substring(2)
+      )}</h1>\n`;
+    } else if (trimmedLine.startsWith("## ")) {
+      // Close any open lists
+      if (inUnorderedList) {
+        bodyContent += "</ul>\n";
+        inUnorderedList = false;
+      }
+      if (inOrderedList) {
+        bodyContent += "</ol>\n";
+        inOrderedList = false;
+      }
+
+      bodyContent += `<h2>${processInlineFormatting(
+        trimmedLine.substring(3)
+      )}</h2>\n`;
+    } else if (trimmedLine.startsWith("### ")) {
+      // Close any open lists
+      if (inUnorderedList) {
+        bodyContent += "</ul>\n";
+        inUnorderedList = false;
+      }
+      if (inOrderedList) {
+        bodyContent += "</ol>\n";
+        inOrderedList = false;
+      }
+
+      bodyContent += `<h3>${processInlineFormatting(
+        trimmedLine.substring(4)
+      )}</h3>\n`;
+    } else if (trimmedLine.startsWith("- ")) {
+      // Handle bullet points with proper list structure
+      if (!inUnorderedList) {
+        bodyContent += "<ul>\n";
+        inUnorderedList = true;
+      }
+
+      // Close ordered list if we were in one
+      if (inOrderedList) {
+        bodyContent += "</ol>\n";
+        inOrderedList = false;
+      }
+
+      bodyContent += `  <li>${processInlineFormatting(
+        trimmedLine.substring(2)
+      )}</li>\n`;
+    } else if (line.match(/^\d+\.\s/)) {
+      // Handle numbered list with proper list structure
+      if (!inOrderedList) {
+        bodyContent += "<ol>\n";
+        inOrderedList = true;
+      }
+
+      // Close unordered list if we were in one
+      if (inUnorderedList) {
+        bodyContent += "</ul>\n";
+        inUnorderedList = false;
+      }
+
+      // Extract the content after the number and period
+      const content = trimmedLine.substring(trimmedLine.indexOf(" ") + 1);
+      bodyContent += `  <li>${processInlineFormatting(content)}</li>\n`;
+    } else {
+      // Close any open lists for regular paragraphs
+      if (inUnorderedList) {
+        bodyContent += "</ul>\n";
+        inUnorderedList = false;
+      }
+      if (inOrderedList) {
+        bodyContent += "</ol>\n";
+        inOrderedList = false;
+      }
+
+      // Regular paragraph
+      bodyContent += `<p>${processInlineFormatting(trimmedLine)}</p>\n`;
+    }
+  }
+
+  // Close any open lists at the end
+  if (inUnorderedList) {
+    bodyContent += "</ul>\n";
+  }
+  if (inOrderedList) {
+    bodyContent += "</ol>\n";
+  }
+
+  return bodyContent;
+};
+
+// Add a simple implementation of markdownToSemanticHtml that uses bodyContentFromMarkdown
+// but doesn't reference the removed function
+const markdownToSemanticHtml = (markdown: string): string => {
+  const bodyContent = bodyContentFromMarkdown(markdown);
+
+  // Create a simple HTML structure without extra styling
+  const cleanHtml = `<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Document</title>
+</head>
+<body>
+${bodyContent}
+</body>
+</html>`;
+
+  return cleanHtml;
+};
+
 const QuickDocPage: React.FC = () => {
   // State for templates and modal
   const [templates, setTemplates] = useState<Template[]>([]);
@@ -392,9 +609,6 @@ const QuickDocPage: React.FC = () => {
   const [docHistory, setDocHistory] = useState<DocumentHistory[]>([]);
   const [documentTitle, setDocumentTitle] = useState<string>("");
   const [copySuccess, setCopySuccess] = useState<string>("");
-  const [activeTab, setActiveTab] = useState<"templates" | "history">(
-    "templates"
-  );
   const [isLoading, setIsLoading] = useState({
     templates: false,
     history: false,
@@ -738,32 +952,145 @@ const QuickDocPage: React.FC = () => {
   };
 
   // Copy formatted content to clipboard
-  const copyToClipboard = () => {
+  const copyToClipboard = async () => {
     if (!generatedDocRef.current) return;
 
-    // Create a range and selection
-    const range = document.createRange();
-    range.selectNode(generatedDocRef.current);
-
-    const selection = window.getSelection();
-    if (!selection) return;
-
-    // Clear any current selections
-    selection.removeAllRanges();
-
-    // Add the new range to copy formatted content
-    selection.addRange(range);
-
     try {
-      // Copy the selection
-      document.execCommand("copy");
-      selection.removeAllRanges();
-      setCopySuccess("Copied to clipboard!");
+      // Get the markdown content
+      const markdownContent = generatedDoc;
 
-      // Clear success message after 2 seconds
-      setTimeout(() => {
-        setCopySuccess("");
-      }, 2000);
+      // Generate semantic HTML for rich text copying
+      const semanticHtml = markdownToSemanticHtml(markdownContent);
+
+      // Try using a direct DOM-based approach that works better with Google Docs
+      try {
+        // Create an invisible iframe to isolate our copy content from page styles
+        const iframe = document.createElement("iframe");
+        iframe.style.position = "absolute";
+        iframe.style.top = "-9999px";
+        iframe.style.left = "-9999px";
+        iframe.style.width = "1px";
+        iframe.style.height = "1px";
+        document.body.appendChild(iframe);
+
+        // Wait for iframe to load and create its document
+        await new Promise((resolve) => {
+          iframe.onload = resolve;
+          // Add a fallback timeout in case onload doesn't fire
+          setTimeout(resolve, 100);
+        });
+
+        // Get the iframe's document and write our clean HTML to it
+        const iframeDocument =
+          iframe.contentDocument || iframe.contentWindow?.document;
+
+        if (iframeDocument) {
+          // Write minimal HTML with just the content - no styles
+          iframeDocument.open();
+
+          // Create a very simple HTML document with no styling at all
+          iframeDocument.write(semanticHtml);
+          iframeDocument.close();
+
+          // Select all content in the iframe
+          iframeDocument.designMode = "on";
+          iframeDocument.execCommand("selectAll", false);
+
+          // Copy the selection
+          if (iframeDocument.execCommand("copy")) {
+            setCopySuccess("Copied to clipboard with formatting!");
+            setTimeout(() => setCopySuccess(""), 2000);
+
+            // Clean up
+            document.body.removeChild(iframe);
+            return;
+          }
+
+          // Clean up if we couldn't copy
+          document.body.removeChild(iframe);
+        }
+      } catch (e) {
+        console.error("Error using iframe approach for clipboard:", e);
+        // Continue to fallbacks
+      }
+
+      // FALLBACK 1: Try direct DOM manipulation approach
+      try {
+        // Create a clean temporary element
+        const tempElem = document.createElement("div");
+        tempElem.setAttribute("contenteditable", "true");
+
+        // Add to the document but make it invisible
+        tempElem.style.position = "absolute";
+        tempElem.style.left = "-9999px";
+        tempElem.style.top = "-9999px";
+        tempElem.style.opacity = "0";
+        tempElem.style.backgroundColor = "transparent";
+        tempElem.style.color = "black";
+
+        // Generate the cleanest possible HTML
+        tempElem.innerHTML = bodyContentFromMarkdown(markdownContent); // Using simplified body function
+
+        document.body.appendChild(tempElem);
+
+        // Select the content
+        const range = document.createRange();
+        range.selectNodeContents(tempElem);
+
+        const selection = window.getSelection();
+        if (selection) {
+          selection.removeAllRanges();
+          selection.addRange(range);
+
+          // Execute the copy command
+          document.execCommand("copy");
+
+          // Clean up
+          selection.removeAllRanges();
+          document.body.removeChild(tempElem);
+
+          setCopySuccess("Copied to clipboard with formatting!");
+          setTimeout(() => setCopySuccess(""), 2000);
+          return;
+        }
+        document.body.removeChild(tempElem);
+      } catch (e) {
+        console.error("Error using clean element approach:", e);
+        // Continue to fallbacks
+      }
+
+      // FALLBACK 2: Use plain text as last resort
+      if (
+        navigator.clipboard &&
+        typeof navigator.clipboard.writeText === "function"
+      ) {
+        try {
+          await navigator.clipboard.writeText(markdownContent);
+          setCopySuccess("Copied as plain text");
+          setTimeout(() => setCopySuccess(""), 2000);
+          return;
+        } catch (e) {
+          console.error("Error using clipboard.writeText:", e);
+        }
+      }
+
+      // Final fallback using textarea
+      const tempTextarea = document.createElement("textarea");
+      tempTextarea.value = markdownContent;
+      tempTextarea.style.position = "absolute";
+      tempTextarea.style.left = "-9999px";
+      document.body.appendChild(tempTextarea);
+      tempTextarea.select();
+
+      const successful = document.execCommand("copy");
+      document.body.removeChild(tempTextarea);
+
+      if (successful) {
+        setCopySuccess("Copied as plain text");
+      } else {
+        setCopySuccess("Copy failed, please try manually selecting the text");
+      }
+      setTimeout(() => setCopySuccess(""), 2000);
     } catch (err) {
       console.error("Failed to copy: ", err);
       setCopySuccess("Failed to copy. Try again.");
@@ -940,7 +1267,8 @@ const QuickDocPage: React.FC = () => {
               style={{
                 overflowY: "auto",
                 flex: 1,
-                padding: "0 1rem 1rem 1rem",
+                padding:
+                  "2px 1rem 1rem 1rem" /* Added 2px padding at top to match card margin */,
               }}
             >
               {isLoading.templates ? (
@@ -1030,7 +1358,7 @@ const QuickDocPage: React.FC = () => {
                       onClick={(e) => e.stopPropagation()}
                     >
                       <a
-                        href="#"
+                        href="/"
                         onClick={(e) => {
                           e.preventDefault();
                           e.stopPropagation();
@@ -1051,7 +1379,7 @@ const QuickDocPage: React.FC = () => {
                         Edit
                       </a>
                       <a
-                        href="#"
+                        href="/"
                         onClick={async (e) => {
                           e.preventDefault();
                           e.stopPropagation();
@@ -1195,7 +1523,7 @@ const QuickDocPage: React.FC = () => {
                       marginBottom: "0.75rem",
                     }}
                   >
-                    Input your content for AI analysis
+                    Describe your document
                   </h2>
                   <p
                     style={{
@@ -1204,9 +1532,8 @@ const QuickDocPage: React.FC = () => {
                       marginBottom: "0.75rem",
                     }}
                   >
-                    Describe your project, feature, or idea in detail. The AI
-                    will analyze your input and generate documentation based on
-                    the selected template.
+                    The selected template will be filled out with the context
+                    you provide
                   </p>
                 </div>
 
@@ -1946,58 +2273,103 @@ const QuickDocPage: React.FC = () => {
                           color: "var(--text-secondary)",
                           overflow: "hidden",
                           textOverflow: "ellipsis",
-                          whiteSpace: "nowrap",
-                          marginBottom: "0.5rem",
+                          display: "-webkit-box",
+                          WebkitLineClamp: 2,
+                          WebkitBoxOrient: "vertical",
+                          lineHeight: "1.4",
+                          marginBottom: "0.75rem",
+                          height: "2.8em",
                         }}
                       >
-                        {doc.content.substring(0, 100)}...
+                        {stripMarkdownForPreview(doc.content).substring(0, 150)}
+                        {doc.content.length > 150 ? "..." : ""}
                       </div>
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          if (
-                            window.confirm(`Delete document "${doc.title}"?`)
-                          ) {
-                            try {
-                              deleteDocumentFromHistory(doc.id)
-                                .then(() => {
-                                  setDocHistory(
-                                    docHistory.filter(
-                                      (item) => item.id !== doc.id
-                                    )
-                                  );
-                                })
-                                .catch((error) => {
-                                  console.error(
-                                    "Error deleting document:",
-                                    error
-                                  );
-                                  alert(
-                                    "Failed to delete document. Please try again."
-                                  );
-                                });
-                            } catch (error) {
-                              console.error("Error deleting document:", error);
-                              alert(
-                                "Failed to delete document. Please try again."
-                              );
-                            }
-                          }
-                        }}
+                      <div
                         style={{
-                          position: "absolute",
-                          top: "1rem",
-                          right: "1rem",
-                          background: "none",
-                          border: "none",
-                          cursor: "pointer",
-                          color: "var(--text-muted)",
-                          padding: "0.25rem",
-                          borderRadius: "var(--radius-sm)",
+                          display: "flex",
+                          gap: "1rem",
+                          marginTop: "auto",
+                          fontSize: "calc(0.8125rem * var(--font-scale))",
                         }}
+                        onClick={(e) => e.stopPropagation()}
                       >
-                        🗑️
-                      </button>
+                        <a
+                          href="/"
+                          onClick={(e) => {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            setGeneratedDoc(doc.content);
+                            setDocumentTitle(doc.title);
+                            setSelectedTemplate(doc.templateId);
+                            setShowGeneratedDoc(true);
+                            setShowHistoryModal(false);
+                          }}
+                          style={{
+                            color: "var(--primary-color)",
+                            textDecoration: "none",
+                            transition: "font-weight 0.1s ease",
+                          }}
+                          onMouseOver={(e) =>
+                            (e.currentTarget.style.fontWeight = "600")
+                          }
+                          onMouseOut={(e) =>
+                            (e.currentTarget.style.fontWeight = "normal")
+                          }
+                        >
+                          View
+                        </a>
+                        <a
+                          href="/"
+                          onClick={(e) => {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            if (
+                              window.confirm(`Delete document "${doc.title}"?`)
+                            ) {
+                              try {
+                                deleteDocumentFromHistory(doc.id)
+                                  .then(() => {
+                                    setDocHistory(
+                                      docHistory.filter(
+                                        (item) => item.id !== doc.id
+                                      )
+                                    );
+                                  })
+                                  .catch((error) => {
+                                    console.error(
+                                      "Error deleting document:",
+                                      error
+                                    );
+                                    alert(
+                                      "Failed to delete document. Please try again."
+                                    );
+                                  });
+                              } catch (error) {
+                                console.error(
+                                  "Error deleting document:",
+                                  error
+                                );
+                                alert(
+                                  "Failed to delete document. Please try again."
+                                );
+                              }
+                            }
+                          }}
+                          style={{
+                            color: "var(--negative)",
+                            textDecoration: "none",
+                            transition: "font-weight 0.1s ease",
+                          }}
+                          onMouseOver={(e) =>
+                            (e.currentTarget.style.fontWeight = "600")
+                          }
+                          onMouseOut={(e) =>
+                            (e.currentTarget.style.fontWeight = "normal")
+                          }
+                        >
+                          Delete
+                        </a>
+                      </div>
                     </div>
                   ))
                 )}

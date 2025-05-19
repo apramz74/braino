@@ -515,7 +515,7 @@ body {
 /* Document Styles */
 .document-header {
   padding: 1.5rem;
-  border-bottom: 1px solid var(--card-border);
+  border-bottom: none;
 }
 
 .document-title-input {
@@ -539,7 +539,7 @@ body {
 
 .document-section {
   padding: 1.5rem;
-  border-bottom: 1px solid var(--card-border);
+  border-bottom: none;
 }
 
 .document-section h3 {
@@ -565,44 +565,37 @@ body {
   border-color: var(--primary-color);
 }
 
-/* Responsive styles for mobile */
-@media (max-width: 768px) {
-  .app-layout {
-    flex-direction: column;
-  }
-
-  .sidebar {
-    width: 100%;
-    height: auto;
-    position: relative;
-  }
-
-  .content-container {
-    max-width: 100%;
-    padding: 1rem;
-  }
-
-  .stats-grid {
-    grid-template-columns: 1fr;
-  }
-
-  .ideas-container {
-    grid-template-columns: 1fr;
-  }
+/* Ensure no horizontal lines in document sections */
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+  border-bottom: none;
+  border-top: none;
+  padding-bottom: 0;
+  margin-bottom: 0.5em;
 }
 
-/* QuickDoc Page Styles */
-.template-item {
-  transition: all 0.2s ease;
+.document-header,
+.document-section {
+  border-bottom: none;
 }
 
-.template-item:hover {
-  transform: translateY(-1px);
-  box-shadow: var(--shadow-sm);
+/* Additional fix for timeline items with colons causing unwanted line breaks */
+li strong {
+  white-space: nowrap;
 }
 
-.template-item.selected {
-  border-color: var(--primary-color) !important;
+strong + span {
+  white-space: nowrap;
+}
+
+/* For bullet points in generated content */
+.editor-bullet strong,
+.editor-numbered strong {
+  display: inline-block;
 }
 
 .section-header {
@@ -641,4 +634,60 @@ body {
     opacity: 1;
     transform: translateY(0);
   }
+}
+
+/* Responsive styles for mobile */
+@media (max-width: 768px) {
+  .app-layout {
+    flex-direction: column;
+  }
+
+  .sidebar {
+    width: 100%;
+    height: auto;
+    position: relative;
+  }
+
+  .content-container {
+    max-width: 100%;
+    padding: 1rem;
+  }
+
+  .stats-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .ideas-container {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* QuickDoc Page Styles */
+.template-item {
+  transition: all 0.2s ease;
+  margin-top: 2px; /* Add top margin to prevent cutoff when hovering */
+}
+
+.template-item:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-sm);
+}
+
+.template-item.selected {
+  border-color: var(--primary-color) !important;
+}
+
+/* Fix for timeline items with colons causing unwanted line breaks */
+strong {
+  white-space: nowrap; /* Prevent line breaks within bold text */
+}
+
+strong + span {
+  white-space: nowrap; /* Keep the text right after the bold text (including colon) on the same line */
+}
+
+/* For bullet points in generated content */
+.editor-bullet strong,
+.editor-bullet strong + span {
+  display: inline; /* Force inline display for bold text in bullet points */
 }
