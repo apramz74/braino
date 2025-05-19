@@ -181,25 +181,3 @@ export const deleteDocumentFromHistory = async (id: string): Promise<void> => {
     throw err;
   }
 };
-
-// Helper function to check Supabase connection
-export const checkSupabaseConnection = async (): Promise<boolean> => {
-  try {
-    // Simple query to check if connection is working
-    const { data, error } = await supabase
-      .from("templates")
-      .select("id")
-      .limit(1);
-
-    if (error) {
-      console.error("Supabase connection check failed:", error);
-      return false;
-    }
-
-    console.log("Supabase connection successful");
-    return true;
-  } catch (err: any) {
-    console.error("Exception in checkSupabaseConnection:", err);
-    return false;
-  }
-};
