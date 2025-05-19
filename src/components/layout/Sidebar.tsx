@@ -19,7 +19,10 @@ const Sidebar: React.FC = () => {
                 isActive ? "nav-link active" : "nav-link"
               }
             >
-              <span className="nav-icon">
+              <span
+                className="nav-icon"
+                style={{ display: "flex", alignItems: "center" }}
+              >
                 <Zap size={18} />
               </span>
               <span className="nav-text">Brainstorm</span>
@@ -32,7 +35,10 @@ const Sidebar: React.FC = () => {
                 isActive ? "nav-link active" : "nav-link"
               }
             >
-              <span className="nav-icon">
+              <span
+                className="nav-icon"
+                style={{ display: "flex", alignItems: "center" }}
+              >
                 <FileText size={18} />
               </span>
               <span className="nav-text">QuickDoc</span>

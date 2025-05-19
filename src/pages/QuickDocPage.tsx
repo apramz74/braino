@@ -856,8 +856,12 @@ const QuickDocPage: React.FC = () => {
               e.currentTarget.style.backgroundColor = "transparent";
             }}
           >
-            <FileText size={18} />
-            <span>History</span>
+            <span style={{ display: "flex", alignItems: "center" }}>
+              <FileText size={18} />
+            </span>
+            <span style={{ display: "flex", alignItems: "center" }}>
+              History
+            </span>
             <div
               style={{
                 display: "flex",
