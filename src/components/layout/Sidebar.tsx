@@ -1,6 +1,6 @@
 import React from "react";
 import { NavLink, Link } from "react-router-dom";
-import { Zap, FileText } from "lucide-react";
+import { Brain, Zap, Palette } from "lucide-react";
 
 const Sidebar: React.FC = () => {
   return (
@@ -23,9 +23,9 @@ const Sidebar: React.FC = () => {
                 className="nav-icon"
                 style={{ display: "flex", alignItems: "center" }}
               >
-                <Zap size={18} />
+                <Brain size={18} />
               </span>
-              <span className="nav-text">Brainstorm</span>
+              <span className="nav-text">Brainstormer</span>
             </NavLink>
           </li>
           <li className="nav-item">
@@ -39,9 +39,25 @@ const Sidebar: React.FC = () => {
                 className="nav-icon"
                 style={{ display: "flex", alignItems: "center" }}
               >
-                <FileText size={18} />
+                <Zap size={18} />
               </span>
               <span className="nav-text">QuickDoc</span>
+            </NavLink>
+          </li>
+          <li className="nav-item">
+            <NavLink
+              to="/designstormer"
+              className={({ isActive }) =>
+                isActive ? "nav-link active" : "nav-link"
+              }
+            >
+              <span
+                className="nav-icon"
+                style={{ display: "flex", alignItems: "center" }}
+              >
+                <Palette size={18} />
+              </span>
+              <span className="nav-text">Designstormer</span>
             </NavLink>
           </li>
         </ul>

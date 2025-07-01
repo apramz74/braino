@@ -12,7 +12,7 @@
   --sidebar-bg: #111827;
   --sidebar-text: #f3f4f6;
   --sidebar-hover: #1f2937;
-  --sidebar-active: #3b82f6;
+  --sidebar-active: #374151;
   --main-bg: #ffffff;
   --card-bg: #ffffff;
   --card-border: #e5e7eb;
@@ -96,12 +96,13 @@ body {
 .nav-link {
   display: flex;
   align-items: center;
-  padding: 0.75rem 1.5rem;
+  padding: 0.75rem 1rem;
+  margin: 0 0.75rem;
   color: rgba(243, 244, 246, 0.7);
   text-decoration: none;
   font-weight: 400;
   transition: all 0.2s ease;
-  border-radius: 0;
+  border-radius: 8px;
   font-size: calc(0.9375rem * var(--font-scale));
   opacity: 0.75;
 }
@@ -117,7 +118,6 @@ body {
   color: white;
   font-weight: 600;
   opacity: 1;
-  box-shadow: 0 0 10px rgba(59, 130, 246, 0.4);
 }
 
 .nav-icon {

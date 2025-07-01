@@ -8,6 +8,7 @@ import MainLayout from "./components/layout/MainLayout";
 // Import pages
 import BrainstormPage from "./pages/BrainstormPage";
 import QuickDocPage from "./pages/QuickDocPage";
+import DesignstormerPage from "./pages/DesignstormerPage";
 
 function App() {
   return (
@@ -19,6 +20,7 @@ function App() {
         <Route element={<MainLayout />}>
           <Route path="/brainstorm" element={<BrainstormPage />} />
           <Route path="/quickdoc" element={<QuickDocPage />} />
+          <Route path="/designstormer" element={<DesignstormerPage />} />
         </Route>
 
         {/* Redirect any unmatched routes to the brainstorm page */}

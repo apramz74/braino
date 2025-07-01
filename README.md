@@ -21,11 +21,13 @@ BrainTwo is a React application that helps Product Managers brainstorm and itera
 
    ```
    REACT_APP_OPENAI_API_KEY=your_openai_api_key_here
+   REACT_APP_GEMINI_API_KEY=your_gemini_api_key_here
    REACT_APP_SUPABASE_URL=your_supabase_url_here
    REACT_APP_SUPABASE_ANON_KEY=your_supabase_anon_key_here
    ```
 
    You can get an OpenAI API key from [OpenAI's platform](https://platform.openai.com/api-keys).
+   You can get a Gemini API key from [Google AI Studio](https://makersuite.google.com/app/apikey) (required for image generation in mockups).
    For Supabase, create a free account at [Supabase](https://supabase.com) and create a new project.
 
 4. Set up your Supabase database with the following tables:
@@ -65,6 +67,7 @@ BrainTwo is a React application that helps Product Managers brainstorm and itera
 ## Environment Variables
 
 - `REACT_APP_OPENAI_API_KEY`: Your OpenAI API key (required)
+- `REACT_APP_GEMINI_API_KEY`: Your Gemini API key (required for image generation in mockups)
 - `REACT_APP_SUPABASE_URL`: Your Supabase project URL (required for database features)
 - `REACT_APP_SUPABASE_ANON_KEY`: Your Supabase anonymous key (required for database features)
 
