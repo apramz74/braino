@@ -538,6 +538,28 @@ export const generateHTMLMockup = async (
     - Design with realistic content, not just placeholder text
     - Create balanced, harmonious layouts with intentional whitespace
     - Ensure the interface tells a story and guides users toward their goal
+  
+    
+    Compositional Thinking:
+    Think like a visual designer who understands proportional relationships. Every element should feel naturally sized relative to its neighbors and purpose. When you see an image in a real, well-designed website, it never feels "too big" or "too small" - it feels just right for its context.
+    
+    Visual Hierarchy Principles:
+    - Primary content (text, forms, key info) should dominate the visual space
+    - Supporting elements (images, icons, decorations) should enhance, not compete
+    - Each element should have a clear role in the user's journey
+    - Size relationships should feel natural and purposeful
+    - Nothing should surprise or overwhelm the user
+    
+    Proportional Relationships:
+    - Images should be sized relative to their importance and context
+    - Hero images set the tone but don't dominate the entire experience  
+    - Product images show detail without overwhelming product information
+    - Profile images are appropriately intimate in scale
+    - Decorative elements stay subtle and supportive
+    - Text remains the primary communication medium
+    
+    Design Intuition Questions:
+    As you design, constantly ask: "If I visited this as a real website, would this feel balanced and natural? Would any element make me think 'that's too big' or 'that doesn't belong'?" Trust your compositional instincts to create layouts that feel effortlessly well-proportioned.
     
     REALISTIC APPLICATION STRUCTURE:
     - Design complete page layouts with proper headers, navigation, main content areas, and footers when appropriate
@@ -567,12 +589,26 @@ export const generateHTMLMockup = async (
     - Test that all sections visually align when viewed as a complete page
     
     IMPORTANT - Image Guidelines:
+    **The current prompt lacks compositional guidance for images, causing AI to create unbalanced visual relationships.**
+    
+    Technical Implementation:
     - When you need images in the mockup, use this EXACT format for img tags:
       <img src="PLACEHOLDER_IMAGE_X" alt="descriptive alt text" style="your css styles">
     - Use "PLACEHOLDER_IMAGE_1", "PLACEHOLDER_IMAGE_2", etc. as the src values
     - Always provide descriptive alt text that explains what kind of image is needed
     - For background images in CSS, use: background-image: url('PLACEHOLDER_IMAGE_X');
     - Number your placeholders sequentially (1, 2, 3, etc.)
+    
+    Compositional Image Thinking:
+    - Size each image thoughtfully based on its role in the user experience
+    - Consider how the image relates to surrounding text and interface elements
+    - Use CSS properties like object-fit, max-width, and appropriate dimensions
+    - Hero images should invite but not dominate; content images should inform but not overwhelm
+    - Profile images should feel personal and appropriately scaled for their context
+    - Every image should feel like it belongs naturally in its container
+    
+    Image Purpose & Context:
+    Before adding any image, ask: "What is this image helping the user accomplish?" Size and position it accordingly. A product hero shot serves a different purpose than a small profile avatar, and their proportions should reflect that difference naturally.
     
     Styling preferences:
     	• Overall Philosophy: Fast, minimal, elegant. Prioritizes user flow, clarity, and visual hierarchy. No unnecessary decoration — every element supports momentum and focus.
@@ -626,6 +662,16 @@ export const generateHTMLMockup = async (
     - Include realistic branding, content, and interface elements that users would expect
     - Make it look production-ready, not like a wireframe or design exercise
     - If you include any PLACEHOLDER_IMAGE_X in your HTML, you MUST provide corresponding prompts in the imagePrompts array
+    
+    VISUAL BALANCE CHECK (Critical):
+    Before finalizing your design, step back and evaluate it with fresh eyes:
+    - Does this feel like a thoughtfully designed real website that I'd want to use?
+    - Are the proportions natural and effortless, or does anything feel awkward or oversized?
+    - Can I quickly understand the purpose and navigate to what I need?
+    - Do all elements work together harmoniously, or is something competing for attention?
+    - Would a user trust this interface and feel confident using it?
+    
+    If anything feels "off" or unbalanced, trust that instinct and refine the composition until it feels naturally well-designed.
   `;
 
   const imageContext =

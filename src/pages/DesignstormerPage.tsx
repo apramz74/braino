@@ -1,5 +1,5 @@
 import React, { useState, useRef } from "react";
-import { Eye, RefreshCw } from "lucide-react";
+import { Eye, RefreshCw, Copy, X } from "lucide-react";
 import { generateHTMLMockup } from "../services/openaiService";
 
 interface PastedImage {
@@ -24,7 +24,7 @@ const DesignstormerPage: React.FC = () => {
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
   const [mockupResult, setMockupResult] = useState<MockupResult | null>(null);
-  const [showPrompt, setShowPrompt] = useState<boolean>(false);
+  const [showPromptModal, setShowPromptModal] = useState<boolean>(false);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   const handleImagePaste = (e: React.ClipboardEvent) => {
@@ -106,7 +106,7 @@ const DesignstormerPage: React.FC = () => {
     setMockupResult(null);
     setError(null);
     setHoveredImageId(null);
-    setShowPrompt(false);
+    setShowPromptModal(false);
   };
 
   const handleRegenerate = async () => {
@@ -153,14 +153,16 @@ const DesignstormerPage: React.FC = () => {
           }}
         >
           <h1 style={{ margin: 0 }}>Designstormer</h1>
+          <button
+            onClick={handleNewDesignstorm}
+            className="header-secondary-button"
+          >
+            New designstorm
+          </button>
         </div>
 
         <div className="page-content">
           <div className="results-container">
-            <button onClick={handleNewDesignstorm} className="back-button">
-              &lt; New designstorm
-            </button>
-
             <div className="mockup-section">
               <h2>Mockup</h2>
               <div className="mockup-display">
@@ -174,10 +176,10 @@ const DesignstormerPage: React.FC = () => {
               <div className="mockup-actions">
                 <button
                   className="action-link"
-                  onClick={() => setShowPrompt(!showPrompt)}
+                  onClick={() => setShowPromptModal(true)}
                 >
                   <Eye size={16} />
-                  {showPrompt ? "Hide prompt" : "See prompt"}
+                  See prompt
                 </button>
                 <button
                   onClick={handleRegenerate}
@@ -200,29 +202,65 @@ const DesignstormerPage: React.FC = () => {
               </div>
             </div>
 
-            {showPrompt && (
-              <div className="prompt-section">
-                <h3>Your prompt</h3>
-                <div className="prompt-content">
-                  <p>{description}</p>
-                  {pastedImages.length > 0 && (
-                    <div className="prompt-images">
-                      <p className="images-label">
-                        {pastedImages.length} image
-                        {pastedImages.length !== 1 ? "s" : ""} provided:
-                      </p>
-                      <div className="prompt-images-grid">
-                        {pastedImages.map((image) => (
-                          <img
-                            key={image.id}
-                            src={image.dataUrl}
-                            alt={image.name}
-                            className="prompt-image-thumbnail"
-                          />
-                        ))}
-                      </div>
+            {/* Modal for displaying prompt */}
+            {showPromptModal && (
+              <div
+                className="modal-overlay"
+                onClick={() => setShowPromptModal(false)}
+              >
+                <div
+                  className="modal-content"
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  <div className="modal-header">
+                    <h3>Your prompt</h3>
+                    <button
+                      className="modal-close"
+                      onClick={() => setShowPromptModal(false)}
+                    >
+                      <X size={20} />
+                    </button>
+                  </div>
+                  <div className="modal-body">
+                    <div className="prompt-text">
+                      <p>{description}</p>
                     </div>
-                  )}
+                    {pastedImages.length > 0 && (
+                      <div className="prompt-images">
+                        <p className="images-label">
+                          {pastedImages.length} image
+                          {pastedImages.length !== 1 ? "s" : ""} provided:
+                        </p>
+                        <div className="prompt-images-grid">
+                          {pastedImages.map((image) => (
+                            <img
+                              key={image.id}
+                              src={image.dataUrl}
+                              alt={image.name}
+                              className="prompt-image-thumbnail"
+                            />
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                  <div className="modal-footer">
+                    <button
+                      className="copy-button"
+                      onClick={() => {
+                        const promptText =
+                          pastedImages.length > 0
+                            ? `${description}\n\n${pastedImages.length} image${
+                                pastedImages.length !== 1 ? "s" : ""
+                              } provided`
+                            : description;
+                        navigator.clipboard.writeText(promptText);
+                      }}
+                    >
+                      <Copy size={16} />
+                      Copy to clipboard
+                    </button>
+                  </div>
                 </div>
               </div>
             )}
@@ -233,22 +271,24 @@ const DesignstormerPage: React.FC = () => {
           .results-container {
             max-width: 1200px;
             margin: 0 auto;
-            padding: 2rem 0;
+            padding: 1rem 0 2rem 0;
           }
 
-          .back-button {
-            background: none;
-            border: none;
-            color: #3b82f6;
-            font-size: 1rem;
+          .header-secondary-button {
+            background: #f3f4f6;
+            color: #374151;
+            border: 1px solid #d1d5db;
+            padding: 0.5rem 1rem;
+            border-radius: 6px;
+            font-size: 0.875rem;
+            font-weight: 500;
             cursor: pointer;
-            margin-bottom: 2rem;
-            padding: 0;
-            text-decoration: none;
+            transition: all 0.2s ease;
           }
 
-          .back-button:hover {
-            text-decoration: underline;
+          .header-secondary-button:hover {
+            background: #e5e7eb;
+            border-color: #9ca3af;
           }
 
           .mockup-section {
@@ -256,11 +296,11 @@ const DesignstormerPage: React.FC = () => {
           }
 
           .mockup-section h2 {
-            font-size: 2rem;
+            font-size: 1.5rem;
             font-weight: 600;
             color: #1f2937;
-            margin: 0 0 1.5rem 0;
-            text-align: center;
+            margin: 0 0 0.75rem 0;
+            text-align: left;
           }
 
           .mockup-display {
@@ -292,20 +332,22 @@ const DesignstormerPage: React.FC = () => {
           .action-link {
             background: none;
             border: none;
-            color: #1f2937;
+            color: #3b82f6;
             font-size: 1rem;
             font-weight: 500;
             cursor: pointer;
             display: flex;
             align-items: center;
             gap: 0.5rem;
-            padding: 0.5rem;
+            padding: 0.5rem 1rem;
             border-radius: 4px;
-            transition: background-color 0.2s;
+            transition: color 0.2s, background-color 0.2s;
+            text-decoration: none;
           }
 
           .action-link:hover:not(:disabled) {
-            background-color: #f9fafb;
+            color: #1d4ed8;
+            background-color: #dbeafe;
           }
 
           .action-link:disabled {
@@ -317,8 +359,8 @@ const DesignstormerPage: React.FC = () => {
             font-size: 1.5rem;
             font-weight: 600;
             color: #1f2937;
-            margin: 0 0 1rem 0;
-            text-align: center;
+            margin: 0 0 0.75rem 0;
+            text-align: left;
           }
 
           .explanation-content {
@@ -334,30 +376,7 @@ const DesignstormerPage: React.FC = () => {
             color: #374151;
           }
 
-          .prompt-section {
-            margin-bottom: 3rem;
-          }
 
-          .prompt-section h3 {
-            font-size: 1.5rem;
-            font-weight: 600;
-            color: #1f2937;
-            margin: 0 0 1rem 0;
-            text-align: center;
-          }
-
-          .prompt-content {
-            border: 2px solid #6b7280;
-            border-radius: 8px;
-            padding: 1.5rem;
-            background: white;
-          }
-
-          .prompt-content p {
-            margin: 0 0 1rem 0;
-            line-height: 1.6;
-            color: #374151;
-          }
 
           .prompt-images {
             margin-top: 1rem;
@@ -400,6 +419,109 @@ const DesignstormerPage: React.FC = () => {
               transform: rotate(360deg);
             }
           }
+
+          /* Modal Styles */
+          .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.5);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+            padding: 1rem;
+          }
+
+          .modal-content {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+            max-width: 600px;
+            width: 100%;
+            max-height: 80vh;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+          }
+
+          .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 1.5rem;
+            border-bottom: 1px solid #e5e7eb;
+          }
+
+          .modal-header h3 {
+            margin: 0;
+            font-size: 1.25rem;
+            font-weight: 600;
+            color: #1f2937;
+          }
+
+          .modal-close {
+            background: none;
+            border: none;
+            color: #6b7280;
+            cursor: pointer;
+            padding: 0.25rem;
+            border-radius: 4px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: color 0.2s, background-color 0.2s;
+          }
+
+          .modal-close:hover {
+            color: #374151;
+            background-color: #f9fafb;
+          }
+
+          .modal-body {
+            padding: 1.5rem;
+            overflow-y: auto;
+            flex: 1;
+          }
+
+          .prompt-text p {
+            margin: 0 0 1rem 0;
+            line-height: 1.6;
+            color: #374151;
+            white-space: pre-wrap;
+          }
+
+          .modal-footer {
+            padding: 1rem 1.5rem;
+            border-top: 1px solid #e5e7eb;
+            display: flex;
+            justify-content: flex-end;
+          }
+
+          .copy-button {
+            background: #3b82f6;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            padding: 0.75rem 1rem;
+            font-size: 0.875rem;
+            font-weight: 500;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            transition: background-color 0.2s;
+          }
+
+          .copy-button:hover {
+            background: #2563eb;
+          }
+
+          .copy-button:active {
+            background: #1d4ed8;
+          }
         `}</style>
       </div>
     );
@@ -435,63 +557,77 @@ const DesignstormerPage: React.FC = () => {
       )}
 
       <div className="page-content">
-        <div className="designstormer-form">
-          <div className="form-header">
-            <h2>What do you want to see?</h2>
-            <p>
-              Share what you need to design and if you want, a visual reference
-            </p>
-          </div>
-
-          <div className="input-section">
-            <textarea
-              ref={textareaRef}
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
-              onPaste={handleImagePaste}
-              placeholder="Describe what you want to design..."
-              className="description-input"
-              disabled={isLoading}
-            />
-
-            {/* Image badges below the text input with reserved space */}
-            <div className="images-container">
-              {pastedImages.map((image) => (
-                <div
-                  key={image.id}
-                  className="image-badge"
-                  onMouseEnter={(e) => handleMouseEnter(image.id, e)}
-                  onMouseLeave={() => setHoveredImageId(null)}
-                >
-                  <div className="image-preview-container">
-                    <img
-                      src={image.dataUrl}
-                      alt={image.name}
-                      className="image-thumbnail"
-                    />
-                    <span className="image-label">Image</span>
-                    {hoveredImageId === image.id && (
-                      <button
-                        onClick={() => removeImage(image.id)}
-                        className="remove-image"
-                        type="button"
-                        disabled={isLoading}
-                      >
-                        ×
-                      </button>
-                    )}
-                  </div>
-                </div>
-              ))}
+        <div className="designstormer-container">
+          <div className="designstormer-content">
+            <div className="designstormer-header">
+              <h2>What do you want to see?</h2>
             </div>
 
-            <button
-              onClick={handleSubmit}
-              className="submit-button"
-              disabled={!description.trim() || isLoading}
+            <form
+              onSubmit={(e) => {
+                e.preventDefault();
+                handleSubmit();
+              }}
+              className="designstormer-form"
             >
-              {isLoading ? "Generating mockup..." : "Start designstorming"}
-            </button>
+              <div className="input-group">
+                <label htmlFor="design-input" className="input-label">
+                  Share what you need to design and if you want, a visual
+                  reference
+                </label>
+                <textarea
+                  id="design-input"
+                  ref={textareaRef}
+                  value={description}
+                  onChange={(e) => setDescription(e.target.value)}
+                  onPaste={handleImagePaste}
+                  placeholder="Describe what you want to design..."
+                  className="description-input"
+                  rows={4}
+                  disabled={isLoading}
+                  autoFocus
+                />
+
+                {/* Image badges below the text input with reserved space */}
+                <div className="images-container">
+                  {pastedImages.map((image) => (
+                    <div
+                      key={image.id}
+                      className="image-badge"
+                      onMouseEnter={(e) => handleMouseEnter(image.id, e)}
+                      onMouseLeave={() => setHoveredImageId(null)}
+                    >
+                      <div className="image-preview-container">
+                        <img
+                          src={image.dataUrl}
+                          alt={image.name}
+                          className="image-thumbnail"
+                        />
+                        <span className="image-label">Image</span>
+                        {hoveredImageId === image.id && (
+                          <button
+                            onClick={() => removeImage(image.id)}
+                            className="remove-image"
+                            type="button"
+                            disabled={isLoading}
+                          >
+                            ×
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              <button
+                type="submit"
+                className="submit-button"
+                disabled={!description.trim() || isLoading}
+              >
+                {isLoading ? "Generating mockup..." : "Start designstorming"}
+              </button>
+            </form>
           </div>
         </div>
       </div>
@@ -513,51 +649,65 @@ const DesignstormerPage: React.FC = () => {
       )}
 
       <style>{`
-        .designstormer-form {
-          max-width: 600px;
-          margin: 0 auto;
-          padding: 2rem 0;
+        .designstormer-container {
+          display: flex;
+          justify-content: center;
+          align-items: flex-start;
+          padding: 3rem 2rem 2rem 2rem;
         }
 
-        .form-header {
+        .designstormer-content {
+          max-width: 600px;
+          width: 100%;
           text-align: center;
+        }
+
+        .designstormer-header h2 {
+          font-size: 1.5rem;
+          margin-bottom: 0.75rem;
+          color: #374151;
+          font-weight: 600;
+          text-align: left;
+        }
+
+        .designstormer-form {
           margin-bottom: 3rem;
         }
 
-        .form-header h2 {
-          font-size: 2rem;
-          font-weight: 600;
-          color: #1f2937;
-          margin: 0 0 0.5rem 0;
+        .input-group {
+          margin-bottom: 1.5rem;
+          text-align: left;
         }
 
-        .form-header p {
-          font-size: 1.1rem;
+        .input-label {
+          display: block;
+          font-size: 0.9rem;
           color: #6b7280;
-          margin: 0;
-        }
-
-        .input-section {
-          display: flex;
-          flex-direction: column;
-          gap: 0;
+          margin-bottom: 0.5rem;
+          font-weight: 500;
         }
 
         .description-input {
+          width: 100%;
+          padding: 1rem;
           border: 2px solid #e5e7eb;
-          border-radius: 8px;
-          padding: 1.5rem;
+          border-radius: 12px;
           font-size: 1rem;
           line-height: 1.5;
           resize: vertical;
-          min-height: 200px;
-          outline: none;
-          font-family: inherit;
-          margin-bottom: 0;
+          min-height: 120px;
+          transition: border-color 0.2s ease;
+        }
+
+        .description-input::placeholder {
+          font-size: 0.875rem;
+          color: #9ca3af;
         }
 
         .description-input:focus {
-          border-color: #3b82f6;
+          outline: none;
+          border-color: #2563eb;
+          box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
         }
 
         .description-input:disabled {
@@ -565,19 +715,16 @@ const DesignstormerPage: React.FC = () => {
           cursor: not-allowed;
         }
 
-        .description-input::placeholder {
-          color: #9ca3af;
-        }
-
         .images-container {
           height: 32px;
-          padding: 0.25rem 1rem;
+          padding: 0.25rem 0rem;
           display: flex;
           flex-wrap: wrap;
           gap: 0.75rem;
           align-items: flex-start;
           overflow-x: auto;
           overflow-y: visible;
+          margin-top: 0.5rem;
         }
 
         .image-badge {
@@ -664,27 +811,30 @@ const DesignstormerPage: React.FC = () => {
         }
 
         .submit-button {
-          background: #1f2937;
+          background: #2563eb;
           color: white;
           border: none;
-          padding: 1rem 2rem;
-          border-radius: 8px;
-          font-size: 1rem;
+          padding: 0.625rem 1.25rem;
+          border-radius: 4px;
+          font-size: 0.844rem;
           font-weight: 600;
           cursor: pointer;
-          margin-top: 2rem;
-          transition: background-color 0.2s ease;
-          align-self: center;
+          transition: all 0.2s ease;
+          display: flex;
+          align-items: center;
+          gap: 0.5rem;
+          margin: 0 auto;
         }
 
         .submit-button:hover:not(:disabled) {
-          background: #111827;
+          background: #1d4ed8;
+          transform: translateY(-1px);
         }
 
         .submit-button:disabled {
-          background: #d1d5db;
-          color: #9ca3af;
+          background: #9ca3af;
           cursor: not-allowed;
+          transform: none;
         }
 
         .error-banner {
