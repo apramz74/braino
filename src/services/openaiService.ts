@@ -1,5 +1,5 @@
 import { Idea, AgendaDimension, DimensionOption } from "../types";
-import { generateMultipleImages } from "./geminiService";
+import { generateMultipleImages, analyzeImages } from "./geminiService";
 
 const API_ENDPOINT = "https://api.openai.com/v1/chat/completions";
 
@@ -515,6 +515,22 @@ export const generateHTMLMockup = async (
     throw new Error("API key is missing");
   }
 
+  // Analyze images using Gemini if provided
+  let imageAnalysis = "";
+  if (images.length > 0) {
+    try {
+      console.log(`Analyzing ${images.length} images with Gemini...`);
+      imageAnalysis = await analyzeImages(images, "UI/UX design reference");
+      console.log("Image analysis completed");
+    } catch (error) {
+      console.warn(
+        "Failed to analyze images, proceeding without image context:",
+        error
+      );
+      // Continue without image analysis if it fails
+    }
+  }
+
   const systemMessage = `
     You are a UI/UX design expert who creates beautiful, modern HTML/CSS mockups that look like real, production-ready web applications.
     
@@ -674,10 +690,13 @@ export const generateHTMLMockup = async (
     If anything feels "off" or unbalanced, trust that instinct and refine the composition until it feels naturally well-designed.
   `;
 
-  const imageContext =
-    images.length > 0
-      ? `\n\nReference images provided: ${images.length} image(s) uploaded for visual context.`
-      : "";
+  const imageContext = imageAnalysis
+    ? `\n\nVISUAL REFERENCE ANALYSIS:\nThe following analysis is based on ${
+        images.length
+      } reference image${
+        images.length > 1 ? "s" : ""
+      } provided:\n\n${imageAnalysis}\n\nUse this visual reference analysis to inform your design decisions and incorporate relevant visual elements, patterns, and styles into your mockup.`
+    : "";
 
   const userMessage = `
 Design Request: ${description}${imageContext}

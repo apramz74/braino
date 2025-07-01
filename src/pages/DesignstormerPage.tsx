@@ -1,6 +1,7 @@
 import React, { useState, useRef } from "react";
 import { Eye, RefreshCw, Copy, X } from "lucide-react";
 import { generateHTMLMockup } from "../services/openaiService";
+import { analyzeImages } from "../services/geminiService";
 
 interface PastedImage {
   id: string;
@@ -25,6 +26,9 @@ const DesignstormerPage: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [mockupResult, setMockupResult] = useState<MockupResult | null>(null);
   const [showPromptModal, setShowPromptModal] = useState<boolean>(false);
+  const [showAnalysisModal, setShowAnalysisModal] = useState<boolean>(false);
+  const [analysisResult, setAnalysisResult] = useState<string>("");
+  const [isAnalyzing, setIsAnalyzing] = useState<boolean>(false);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   const handleImagePaste = (e: React.ClipboardEvent) => {
@@ -136,6 +140,32 @@ const DesignstormerPage: React.FC = () => {
       );
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const handleTestAnalysis = async () => {
+    if (pastedImages.length === 0) return;
+
+    setIsAnalyzing(true);
+    setError(null);
+
+    try {
+      const imageDataUrls = pastedImages.map((img) => img.dataUrl);
+      const analysis = await analyzeImages(
+        imageDataUrls,
+        "UI/UX design reference"
+      );
+      setAnalysisResult(analysis);
+      setShowAnalysisModal(true);
+    } catch (err) {
+      console.error("Error analyzing images:", err);
+      setError(
+        err instanceof Error
+          ? err.message
+          : "Failed to analyze images. Please try again."
+      );
+    } finally {
+      setIsAnalyzing(false);
     }
   };
 
@@ -376,8 +406,6 @@ const DesignstormerPage: React.FC = () => {
             color: #374151;
           }
 
-
-
           .prompt-images {
             margin-top: 1rem;
             padding-top: 1rem;
@@ -404,8 +432,6 @@ const DesignstormerPage: React.FC = () => {
             border-radius: 6px;
             border: 1px solid #d1d5db;
           }
-
-
 
           .spinning {
             animation: spin 1s linear infinite;
@@ -620,13 +646,24 @@ const DesignstormerPage: React.FC = () => {
                 </div>
               </div>
 
-              <button
-                type="submit"
-                className="submit-button"
-                disabled={!description.trim() || isLoading}
-              >
-                {isLoading ? "Generating mockup..." : "Start designstorming"}
-              </button>
+              <div className="button-group">
+                <button
+                  type="submit"
+                  className="submit-button"
+                  disabled={!description.trim() || isLoading}
+                >
+                  {isLoading ? "Generating mockup..." : "Start designstorming"}
+                </button>
+
+                <button
+                  type="button"
+                  className="test-button"
+                  disabled={pastedImages.length === 0 || isAnalyzing}
+                  onClick={handleTestAnalysis}
+                >
+                  {isAnalyzing ? "Analyzing..." : "Test image analysis"}
+                </button>
+              </div>
             </form>
           </div>
         </div>
@@ -645,6 +682,60 @@ const DesignstormerPage: React.FC = () => {
             src={pastedImages.find((img) => img.id === hoveredImageId)?.dataUrl}
             alt="Preview"
           />
+        </div>
+      )}
+
+      {/* Analysis Test Modal */}
+      {showAnalysisModal && (
+        <div
+          className="modal-overlay"
+          onClick={() => setShowAnalysisModal(false)}
+        >
+          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-header">
+              <h3>Image Analysis Results</h3>
+              <button
+                className="modal-close"
+                onClick={() => setShowAnalysisModal(false)}
+              >
+                <X size={20} />
+              </button>
+            </div>
+            <div className="modal-body">
+              <div className="analysis-text">
+                <p>{analysisResult}</p>
+              </div>
+              {pastedImages.length > 0 && (
+                <div className="prompt-images">
+                  <p className="images-label">
+                    {pastedImages.length} image
+                    {pastedImages.length !== 1 ? "s" : ""} analyzed:
+                  </p>
+                  <div className="prompt-images-grid">
+                    {pastedImages.map((image) => (
+                      <img
+                        key={image.id}
+                        src={image.dataUrl}
+                        alt={image.name}
+                        className="prompt-image-thumbnail"
+                      />
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+            <div className="modal-footer">
+              <button
+                className="copy-button"
+                onClick={() => {
+                  navigator.clipboard.writeText(analysisResult);
+                }}
+              >
+                <Copy size={16} />
+                Copy analysis
+              </button>
+            </div>
+          </div>
         </div>
       )}
 
@@ -810,6 +901,13 @@ const DesignstormerPage: React.FC = () => {
           display: block;
         }
 
+        .button-group {
+          display: flex;
+          flex-direction: column;
+          gap: 0.75rem;
+          align-items: center;
+        }
+
         .submit-button {
           background: #2563eb;
           color: white;
@@ -823,7 +921,6 @@ const DesignstormerPage: React.FC = () => {
           display: flex;
           align-items: center;
           gap: 0.5rem;
-          margin: 0 auto;
         }
 
         .submit-button:hover:not(:disabled) {
@@ -835,6 +932,40 @@ const DesignstormerPage: React.FC = () => {
           background: #9ca3af;
           cursor: not-allowed;
           transform: none;
+        }
+
+        .test-button {
+          background: #f3f4f6;
+          color: #374151;
+          border: 1px solid #d1d5db;
+          padding: 0.5rem 1rem;
+          border-radius: 4px;
+          font-size: 0.75rem;
+          font-weight: 500;
+          cursor: pointer;
+          transition: all 0.2s ease;
+          display: flex;
+          align-items: center;
+          gap: 0.5rem;
+        }
+
+        .test-button:hover:not(:disabled) {
+          background: #e5e7eb;
+          border-color: #9ca3af;
+        }
+
+        .test-button:disabled {
+          background: #f9fafb;
+          color: #9ca3af;
+          cursor: not-allowed;
+          border-color: #e5e7eb;
+        }
+
+        .analysis-text p {
+          margin: 0 0 1rem 0;
+          line-height: 1.6;
+          color: #374151;
+          white-space: pre-wrap;
         }
 
         .error-banner {
@@ -870,6 +1001,129 @@ const DesignstormerPage: React.FC = () => {
           display: flex;
           align-items: center;
           justify-content: center;
+        }
+
+        /* Modal Styles */
+        .modal-overlay {
+          position: fixed;
+          top: 0;
+          left: 0;
+          right: 0;
+          bottom: 0;
+          background: rgba(0, 0, 0, 0.5);
+          display: flex;
+          justify-content: center;
+          align-items: center;
+          z-index: 1000;
+          padding: 1rem;
+        }
+
+        .modal-content {
+          background: white;
+          border-radius: 12px;
+          box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+          max-width: 600px;
+          width: 100%;
+          max-height: 80vh;
+          overflow: hidden;
+          display: flex;
+          flex-direction: column;
+        }
+
+        .modal-header {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          padding: 1.5rem;
+          border-bottom: 1px solid #e5e7eb;
+        }
+
+        .modal-header h3 {
+          margin: 0;
+          font-size: 1.25rem;
+          font-weight: 600;
+          color: #1f2937;
+        }
+
+        .modal-close {
+          background: none;
+          border: none;
+          color: #6b7280;
+          cursor: pointer;
+          padding: 0.25rem;
+          border-radius: 4px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          transition: color 0.2s, background-color 0.2s;
+        }
+
+        .modal-close:hover {
+          color: #374151;
+          background-color: #f9fafb;
+        }
+
+        .modal-body {
+          padding: 1.5rem;
+          overflow-y: auto;
+          flex: 1;
+        }
+
+        .prompt-images {
+          margin-top: 1rem;
+          padding-top: 1rem;
+          border-top: 1px solid #e5e7eb;
+        }
+
+        .images-label {
+          margin: 0 0 0.75rem 0;
+          font-size: 0.9rem;
+          color: #6b7280;
+          font-weight: 500;
+        }
+
+        .prompt-images-grid {
+          display: flex;
+          gap: 0.5rem;
+          flex-wrap: wrap;
+        }
+
+        .prompt-image-thumbnail {
+          width: 48px;
+          height: 48px;
+          object-fit: cover;
+          border-radius: 6px;
+          border: 1px solid #d1d5db;
+        }
+
+        .modal-footer {
+          padding: 1rem 1.5rem;
+          border-top: 1px solid #e5e7eb;
+          display: flex;
+          justify-content: flex-end;
+        }
+
+        .copy-button {
+          background: #3b82f6;
+          color: white;
+          border: none;
+          border-radius: 6px;
+          padding: 0.75rem 1rem;
+          font-size: 0.875rem;
+          font-weight: 500;
+          cursor: pointer;
+          display: flex;
+          align-items: center;
+          gap: 0.5rem;
+          transition: background-color 0.2s;
+        }
+
+        .copy-button:hover {
+          background: #2563eb;
+        }
+
+        .copy-button:active {
+          background: #1d4ed8;
         }
       `}</style>
     </div>
